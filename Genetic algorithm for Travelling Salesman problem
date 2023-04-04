@@ -1,0 +1,80 @@
+import random
+# Define the cities and their coordinates
+city_coords = {
+    'A': (0, 2),
+    'B': (0, 2),
+    'C': (3, 0),
+    'D': (1, 2),
+    'E': (2, 1),
+    'F': (3, 4),
+    'G': (4, 2),
+    'H': (2, 2),
+}
+
+# Define the parameters for the genetic algorithm
+POPULATION_SIZE = 100
+MUTATION_RATE = 0.1
+GENERATIONS = 50
+
+# Define a function to calculate the distance between two cities
+def get_distance(city1, city2):
+    x1, y1 = city_coords[city1]
+    x2, y2 = city_coords[city2]
+    return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+
+# Define a function to calculate the fitness of a route
+def calculate_fitness(route):
+    return sum(get_distance(route[i], route[i+1]) for i in range(len(route)-1)) + get_distance(route[-1], route[0])
+
+# Define a function to create an initial population
+def create_population():
+    population = []
+    for i in range(POPULATION_SIZE):
+        route = list(city_coords.keys())
+        random.shuffle(route)
+        population.append(route)
+    return population
+
+# Define a function to select two parents from the population
+def select_parents(population):
+    fitnesses = [calculate_fitness(route) for route in population]
+    total_fitness = sum(fitnesses)
+    probabilities = [fitness/total_fitness for fitness in fitnesses]
+    parent1 = random.choices(population, probabilities)[0]
+    parent2 = random.choices(population, probabilities)[0]
+    return parent1, parent2
+
+# Define a function to create a child from two parents
+def breed(parent1, parent2):
+    crossover_point = random.randint(0, len(parent1)-1)
+    child = parent1[:crossover_point]
+    for city in parent2:
+        if city not in child:
+            child.append(city)
+    return child
+
+# Define a function to mutate a route
+def mutate(route):
+    for i in range(len(route)):
+        if random.random() < MUTATION_RATE:
+            j = random.randint(0, len(route)-1)
+            route[i], route[j] = route[j], route[i]
+
+
+def run_genetic_algorithm():
+    population = create_population()
+    for i in range(GENERATIONS):
+        new_population = []
+        for j in range(int(POPULATION_SIZE/2)):
+            parent1, parent2 = select_parents(population)
+            child1 = breed(parent1, parent2)
+            child2 = breed(parent2, parent1)
+            mutate(child1)
+            mutate(child2)
+            new_population.extend([child1, child2])
+        population = new_population
+        best_route = min(population, key=calculate_fitness)
+        print(f"Generation {i+1}: {best_route} ({calculate_fitness(best_route)})")
+
+# Run the genetic algorithm
+run_genetic_algorithm()
