@@ -1,0 +1,57 @@
+import random
+import math
+
+# Define the sine function
+def compute_sine(x):
+    return math.sin(x)
+
+# Define the Particle Swarm Optimization algorithm
+def pso_optimization(func, max_iterations=200, num_particles=50, search_range=(-20, 20), c1=1, c2=1, w=0.5):
+    # Initialize the particles
+    particles = []
+    for i in range(num_particles):
+        particle = {'position': random.uniform(search_range[0], search_range[1]),
+                    'velocity': 0,
+                    'best_position': None,
+                    'best_score': None}
+        particle['best_position'] = particle['position']
+        particle['best_score'] = func(particle['position'])
+        particles.append(particle)
+
+    # Initialize the global best position and score
+    global_best_position = particles[0]['best_position']
+    global_best_score = particles[0]['best_score']
+
+    # Start the iterations
+    for i in range(max_iterations):
+        for particle in particles:
+            # Update the velocity
+            particle['velocity'] = w * particle['velocity'] \
+                                   + c1 * random.random() * (particle['best_position'] - particle['position']) \
+                                   + c2 * random.random() * (global_best_position - particle['position'])
+            # Update the position
+            particle['position'] += particle['velocity']
+            # Check if the particle has gone out of bounds
+            if particle['position'] < search_range[0]:
+                particle['position'] = search_range[0]
+            elif particle['position'] > search_range[1]:
+                particle['position'] = search_range[1]
+            # Evaluate the score
+            score = func(particle['position'])
+            # Update the best position and score for the particle
+            if score > particle['best_score']:
+                particle['best_score'] = score
+                particle['best_position'] = particle['position']
+            # Update the global best position and score
+            if score > global_best_score:
+                global_best_score = score
+                global_best_position = particle['position']
+
+    return global_best_position, global_best_score
+
+# Test the algorithm on the sine function
+maxima_pos, maxima_val = pso_optimization(compute_sine, search_range=(0, math.pi), num_particles=100)
+minima_pos, minima_val = pso_optimization(lambda x: -compute_sine(x), search_range=(0, math.pi), num_particles=100)
+
+print(f"Maxima position: {maxima_pos:.4f}, Maxima value: {maxima_val:.4f}")
+print(f"Minima position: {minima_pos:.4f}, Minima value: {minima_val:.4f}")
