@@ -1,0 +1,56 @@
+import random
+import numpy as np
+
+# Define the graph as an adjacency matrix
+distance_mtx = np.array([[0, 20, 3, 4, 2],
+                         [20, 0, 9, 8, 9],
+                         [4, 5, 0, 6, 2],
+                         [3, 4, 8, 0, 7],
+                         [1, 7, 4, 3, 0]])
+
+# Define the parameters for the algorithm
+num_ants = 5
+num_iterations = 20
+evaporation_rate = 0.5
+alpha = 1
+beta = 2
+Q = 100
+
+# Initialize the pheromone matrix
+pheromone_mtx = np.ones(distance_mtx.shape) / len(distance_mtx)
+
+# Define the function to select the next city for each ant
+def select_next_city(current_city, pheromone_mtx, distance_mtx, alpha, beta):
+    # Calculate the probabilities of moving to each city
+    attractiveness = pheromone_mtx[current_city]**alpha * (1 / distance_mtx[current_city])**beta
+    attractiveness[current_city] = 1
+    probabilities = attractiveness / attractiveness.sum()
+    # Select the next city using roulette wheel selection
+    next_city = np.random.choice(range(len(distance_mtx)), p=probabilities)
+    return next_city
+
+# Define the main loop for the ant colony optimization algorithm
+for iteration in range(num_iterations):
+    # Initialize the ant routes
+    ant_routes = []
+    for ant in range(num_ants):
+        start_city = random.randint(0, len(distance_mtx) - 1)
+        ant_route = [start_city]
+        # Build the ant route by selecting the next city at each step
+        while len(ant_route) < len(distance_mtx):
+            current_city = ant_route[-1]
+            next_city = select_next_city(current_city, pheromone_mtx, distance_mtx, alpha, beta)
+            ant_route.append(next_city)
+        ant_routes.append(ant_route)
+    # Update the pheromone levels on each edge
+    delta_pheromone_mtx = np.zeros(distance_mtx.shape)
+    for ant_route in ant_routes:
+        for i in range(len(ant_route) - 1):
+            start_city = ant_route[i]
+            end_city = ant_route[i + 1]
+            delta_pheromone_mtx[start_city][end_city] += Q / distance_mtx[start_city][end_city]
+            delta_pheromone_mtx[end_city][start_city] += Q / distance_mtx[end_city][start_city]
+    pheromone_mtx = (1 - evaporation_rate) * pheromone_mtx + delta_pheromone_mtx
+    # Print the best ant route for this iteration
+    best_ant_route = min(ant_routes, key=lambda x: sum([distance_mtx[x[i]][x[i+1]] for i in range(len(x) - 1)]))
+    print(f"Iteration {iteration}: {best_ant_route}")
